@@ -30,7 +30,7 @@ app.get("/generate", async (req: Request<{ game: string }>, res) => {
         content: `Make me a ${game} game in typescript.`,
       },
     ],
-    model: "gpt-3.5-turbo-1106",
+    model: "gpt-4o-mini",
   });
 
   const data = chatCompletion.choices[0].message.content;
