@@ -15,6 +15,8 @@ app.get("/generate", async (req: Request<{ game: string }>, res) => {
 
   if (!game) return res.status(400).json({ error: "Please provide a game." });
 
+  const model = "gpt-4o-mini";
+
   const chatCompletion = await openai.chat.completions.create({
     messages: [
       {
@@ -30,16 +32,17 @@ app.get("/generate", async (req: Request<{ game: string }>, res) => {
         content: `Make me a ${game} game in typescript.`,
       },
     ],
-    model: "gpt-4o-mini",
+    model: model,
   });
 
   const data = chatCompletion.choices[0].message.content;
 
   // parse the code from the message
   const code = data && data.split("```typescript")[1].split("```")[0];
+  const prefix = `//generated with ${model}\n\n`;
 
   // write it to a file
-  fs.writeFileSync(`games/${(game as string).replace(" ", "_")}.ts`, code || "");
+  fs.writeFileSync(`games/${(game as string).replace(" ", "_")}.ts`, `${prefix}${code || ""}`);
 
   return res.json({ data });
 });
