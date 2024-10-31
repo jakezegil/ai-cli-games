@@ -1,64 +1,92 @@
+//generated with gpt-4o
+
+
 
 import * as readline from 'readline';
 
-class FlappyBirdGame {
-  private score: number;
-  private birdPosition: number;
-  private isGameOver: boolean;
+// Utility functions
+const clearScreen = () => process.stdout.write('\x1Bc');
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  constructor() {
-    this.score = 0;
-    this.birdPosition = 5;
-    this.isGameOver = false;
-  }
+// Game constants
+const SCREEN_HEIGHT = 20;
+const SCREEN_WIDTH = 40;
+const BIRD_CHAR = 'O';
+const PIPE_CHAR = '#';
+const EMPTY_CHAR = ' ';
+const GRAVITY = 1;
+const FLAP_STRENGTH = -3;
 
-  startGame() {
-    this.renderGame();
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
+// Game state
+let birdY = Math.floor(SCREEN_HEIGHT / 2);
+let birdVelocity = 0;
+let pipeX = SCREEN_WIDTH;
+let pipeGapY = Math.floor(SCREEN_HEIGHT / 2);
+let score = 0;
+let gameOver = false;
 
-    rl.on('line', (input: string) => {
-      if (input.toLowerCase() === 'jump') {
-        this.jump();
-      }
-    });
-
-    this.mainLoop();
-  }
-
-  jump() {
-    this.birdPosition -= 2;
-  }
-
-  mainLoop() {
-    setInterval(() => {
-      if (this.isGameOver) {
-        console.log('Game over! Your score: ' + this.score);
-        process.exit(0);
-      } else {
-        this.birdPosition += 1;
-        this.score += 1;
-        this.renderGame();
-      }
-    }, 200);
-  }
-
-  renderGame() {
-    console.clear();
-    console.log('Flappy Bird - Score: ' + this.score + '\n');
-    for (let i = 0; i < 10; i++) {
-      if (i === this.birdPosition) {
-        process.stdout.write('===|o|===\n');
-      } else {
-        process.stdout.write('         \n');
-      }
+// Keyboard input
+readline.emitKeypressEvents(process.stdin);
+process.stdin.setRawMode(true);
+process.stdin.on('keypress', (_, key) => {
+    if (key && key.name === 'space') {
+        birdVelocity = FLAP_STRENGTH;
+    } else if (key && key.ctrl && key.name === 'c') {
+        process.exit();
     }
-    console.log('---------');
-    console.log('Press "jump" to make the bird jump!');
-  }
-}
+});
 
-const game = new FlappyBirdGame();
-game.startGame();
+// Game loop
+const main = async () => {
+    while (!gameOver) {
+        update();
+        render();
+        await sleep(100);
+    }
+    console.log('Game Over! Your score:', score);
+};
+
+const update = () => {
+    birdVelocity += GRAVITY;
+    birdY += birdVelocity;
+
+    if (birdY < 0 || birdY >= SCREEN_HEIGHT) {
+        gameOver = true;
+        return;
+    }
+
+    pipeX -= 1;
+    if (pipeX < -1) {
+        pipeX = SCREEN_WIDTH;
+        pipeGapY = Math.floor(Math.random() * (SCREEN_HEIGHT - 6)) + 3;
+        score++;
+    }
+
+    if (pipeX === 1 && (birdY < pipeGapY - 1 || birdY > pipeGapY + 1)) {
+        gameOver = true;
+    }
+};
+
+const render = () => {
+    clearScreen();
+
+    let screen = '';
+    for (let y = 0; y < SCREEN_HEIGHT; y++) {
+        let line = '';
+        for (let x = 0; x < SCREEN_WIDTH; x++) {
+            if (x === 1 && y === Math.floor(birdY)) {
+                line += BIRD_CHAR;
+            } else if (x === pipeX && (y < pipeGapY - 1 || y > pipeGapY + 1)) {
+                line += PIPE_CHAR;
+            } else {
+                line += EMPTY_CHAR;
+            }
+        }
+        screen += line + '\n';
+    }
+
+    console.log(screen);
+    console.log('Score:', score);
+};
+
+main();
