@@ -1,92 +1,77 @@
 //generated with gpt-4o
 
 
+class AsteroidGame {
+    private grid: string[][] = [];
+    private shipPosition: number = 10;
+    private asteroidPosition: number[] = [];
+    private gridSize: number = 20;
+    private gameOver: boolean = false;
 
-import readline from 'readline';
-
-const width = 40;
-const height = 20;
-const numAsteroids = 50;
-let gameRunning = true;
-
-interface Position {
-    x: number;
-    y: number;
-}
-
-const ship: Position = { x: Math.floor(width / 2), y: Math.floor(height / 2) };
-const asteroids: Position[] = [];
-
-// Initialize asteroids
-for (let i = 0; i < numAsteroids; i++) {
-    asteroids.push({
-        x: Math.floor(Math.random() * width),
-        y: Math.floor(Math.random() * height),
-    });
-}
-
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-});
-
-readline.emitKeypressEvents(process.stdin);
-process.stdin.setRawMode(true);
-
-process.stdin.on('keypress', (str, key) => {
-    if (key.name === 'q' || key.ctrl && key.name === 'c') {
-        gameRunning = false;
-        rl.close();
-    } else if (key.name === 'up') {
-        moveShip(0, -1);
-    } else if (key.name === 'down') {
-        moveShip(0, 1);
-    } else if (key.name === 'left') {
-        moveShip(-1, 0);
-    } else if (key.name === 'right') {
-        moveShip(1, 0);
+    constructor() {
+        this.setupGrid();
+        this.gameLoop();
     }
-});
 
-function moveShip(dx: number, dy: number) {
-    ship.x = Math.min(Math.max(ship.x + dx, 0), width - 1);
-    ship.y = Math.min(Math.max(ship.y + dy, 0), height - 1);
+    private setupGrid() {
+        for (let i = 0; i < this.gridSize; i++) {
+            this.grid[i] = new Array(this.gridSize).fill(' ');
+        }
+    }
 
-    // Check if ship hits an asteroid
-    for (let asteroid of asteroids) {
-        if (ship.x === asteroid.x && ship.y === asteroid.y) {
-            console.log('\nYou were hit by an asteroid! Game Over.');
-            gameRunning = false;
-            rl.close();
-            break;
+    private spawnAsteroid() {
+        const position = Math.floor(Math.random() * this.gridSize);
+        this.asteroidPosition.push(position);
+    }
+
+    private update() {
+        if (Math.random() < 0.1) this.spawnAsteroid();
+
+        this.asteroidPosition = this.asteroidPosition.map(pos => pos + 1);
+        if (this.asteroidPosition.includes(this.shipPosition)) {
+            this.gameOver = true;
+        }
+        this.asteroidPosition = this.asteroidPosition.filter(pos => pos < this.gridSize);
+
+        // Clear grid
+        this.grid.forEach(row => row.fill(' '));
+        // Draw ship
+        this.grid[this.gridSize - 1][this.shipPosition] = 'A';
+        // Draw asteroids
+        this.asteroidPosition.forEach(pos => this.grid[pos][this.shipPosition] = 'O');
+    }
+
+    private render() {
+        console.clear();
+        this.grid.forEach(row => console.log(row.join('')));
+        console.log('Use "a" to move left, "d" to move right, "q" to quit.');
+        if (this.gameOver) {
+            console.log('Game Over!');
+        }
+    }
+
+    private async gameLoop() {
+        const stdin = process.stdin;
+        stdin.setRawMode(true);
+        stdin.resume();
+        stdin.setEncoding('utf8');
+        
+        stdin.on('data', (key: string) => {
+            if (key === '\u0003' || key === 'q') {
+                process.exit();
+            } else if (key === 'a') {
+                this.shipPosition = Math.max(0, this.shipPosition - 1);
+            } else if (key === 'd') {
+                this.shipPosition = Math.min(this.gridSize - 1, this.shipPosition + 1);
+            }
+        });
+
+        while (!this.gameOver) {
+            this.update();
+            this.render();
+            await new Promise(res => setTimeout(res, 200));
         }
     }
 }
 
-function render() {
-    console.clear();
-    const field = Array.from({ length: height }, () => Array(width).fill(' '));
-
-    // Place asteroids
-    asteroids.forEach(({ x, y }) => {
-        field[y][x] = '*';
-    });
-
-    // Place ship
-    field[ship.y][ship.x] = '^';
-
-    console.log(field.map(row => row.join('')).join('\n'));
-    console.log('\nUse arrow keys to move. Press "q" to quit.');
-}
-
-function gameLoop() {
-    if (gameRunning) {
-        render();
-        setTimeout(gameLoop, 100);
-    } else {
-        console.log('Thanks for playing!');
-        process.exit();
-    }
-}
-
-gameLoop();
+new AsteroidGame();

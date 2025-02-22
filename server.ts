@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import fs from "fs";
 import express, { Request } from "express";
-
+import cors from "cors";
 const apiKey = process.env.OPENAI_API_KEY;
 
 const openai = new OpenAI({
@@ -9,6 +9,8 @@ const openai = new OpenAI({
 });
 
 const app = express();
+
+app.use(cors());
 
 app.get("/generate", async (req: Request<{ game: string }>, res) => {
   const game = req.query.game;
@@ -41,10 +43,13 @@ app.get("/generate", async (req: Request<{ game: string }>, res) => {
   const code = data && data.split("```typescript")[1].split("```")[0];
   const prefix = `//generated with ${model}\n\n`;
 
+  // Remove shebang line if present
+  const cleanedCode = code?.replace(/^#!.*\n/, '') || '';
+
   // write it to a file
   fs.writeFileSync(
     `games/${(game as string).replace(" ", "_")}.ts`,
-    `${prefix}${code || ""}`
+    `${prefix}${cleanedCode || ""}`
   );
 
   return res.json({
@@ -93,10 +98,13 @@ app.get("/turbocharge", async (req: Request<{ game: string }>, res) => {
   const code = data && data.split("```typescript")[1].split("```")[0];
   const prefix = `//generated with ${model}\n\n`;
 
+  // Remove shebang line if present
+  const cleanedCode = code?.replace(/^#!.*\n/, '') || '';
+
   // write it to a file
   fs.writeFileSync(
     `games/${(game as string).replace(" ", "_")}.ts`,
-    `${prefix}${code || ""}`
+    `${prefix}${cleanedCode || ""}`
   );
 
   return res.json({ data });

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLI Game Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="font-bold mb-8 text-4xl text-center text-gray-800">CLI Game Generator</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="mb-6">
+                <label for="gameName" class="block font-medium mb-2 text-gray-700">Game Name</label>
+                <input 
+                    type="text" 
+                    id="gameName"
+                    class="border p-2 rounded-md w-full"
+                    placeholder="e.g. number guesser"
+                >
+            </div>
+
+            <div class="flex gap-4">
+                <button 
+                    onclick="generateGame()"
+                    class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md text-white transition-colors w-1/2"
+                >
+                    Generate Game
+                </button>
+                <button 
+                    onclick="turbochargeGame()"
+                    class="bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded-md text-white transition-colors w-1/2"
+                >
+                    Turbocharge Game
+                </button>
+            </div>
+
+            <div id="result" class="mt-6 p-4 bg-gray-50 rounded-md hidden">
+                <div class="flex items-center justify-between">
+                    <pre class="whitespace-pre-wrap"></pre>
+                    <button 
+                        onclick="copyCommand()"
+                        class="ml-4 bg-gray-200 hover:bg-gray-300 p-2 rounded-md transition-colors"
+                        title="Copy command"
+                    >
+                        📋
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function generateGame() {
+            const gameName = document.getElementById('gameName').value;
+            if (!gameName) {
+                alert('Please enter a game name');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3003/generate?game=${encodeURIComponent(gameName)}`);
+                const data = await response.json();
+                
+                const resultDiv = document.getElementById('result');
+                resultDiv.classList.remove('hidden');
+                resultDiv.querySelector('pre').textContent = data.data;
+            } catch (error) {
+                alert('Error generating game: ' + error.message);
+            }
+        }
+
+        async function turbochargeGame() {
+            const gameName = document.getElementById('gameName').value;
+            if (!gameName) {
+                alert('Please enter a game name');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3003/turbocharge?game=${encodeURIComponent(gameName)}`);
+                const data = await response.json();
+                
+                const resultDiv = document.getElementById('result');
+                resultDiv.classList.remove('hidden');
+                resultDiv.querySelector('pre').textContent = 'Game turbocharged! Check your games directory.';
+            } catch (error) {
+                alert('Error turbocharging game: ' + error.message);
+            }
+        }
+
+        async function copyCommand() {
+            const command = document.querySelector('#result pre').textContent;
+            const match = command.match(/`(.*?)`/);
+            if (match) {
+                await navigator.clipboard.writeText(match[1]);
+                const copyButton = document.querySelector('#result button');
+                const originalEmoji = copyButton.textContent;
+                copyButton.textContent = '✅';
+                setTimeout(() => {
+                    copyButton.textContent = originalEmoji;
+                }, 1000);
+            }
+        }
+    </script>
+</body>
+</html>
